@@ -7,7 +7,7 @@ import pymongo
 class crawler:
     url = "http://partychat1.nazca.co.jp/7/hukesen/chat.cgi?mode=index_flmain"
     mongourl = "mongodb://118.27.35.79:27017"
-    lastlogtime = datetime.datetime.fromisoformat("1970-01-01 00:00:00")
+    lastlogtime = datetime.datetime(1970,1,1)
     def __init__(self):
         client = pymongo.MongoClient(crawler.mongourl)
         db = client['chatlog']
