@@ -31,7 +31,7 @@ class crawler:
                 timestamp = datetime.datetime.fromisoformat(timestring)
                 dataobj = dict()
                 if timestamp > crawler.lastlogtime:
-                    lastlogtime = timestamp
+                    crawler.lastlogtime = timestamp
                     mName = re.search(':\s(.+)\sさん\u3000',line)
                     name = mName.groups()[0]
                     dataobj['name']=name
