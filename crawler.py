@@ -21,7 +21,7 @@ class crawler:
         logbody = response.data.decode('cp932', errors='ignore')
         loglist = logbody.split('<HR>\n')
         loglist = loglist[1:-1]
-        for line in loglist:
+        for line in loglist[::-1]:
             m = re.search('おしらせ', line)
             if m != None:
                 mip = re.search('(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})',line)
