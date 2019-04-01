@@ -8,6 +8,7 @@ class crawler:
     url = "http://partychat1.nazca.co.jp/7/hukesen/chat.cgi?mode=index_flmain"
     mongourl = "mongodb://118.27.35.79:27017"
     lastlogtime = datetime.datetime(1970,1,1)
+    http = urllib3.PoolManager()
     def __init__(self):
         client = pymongo.MongoClient(crawler.mongourl)
         db = client['chatlog']
@@ -16,8 +17,7 @@ class crawler:
         crawler.lastlogtime = origintimestamp
 
     def GetPage(self):
-        http = urllib3.PoolManager()
-        response = http.request('GET', crawler.url)
+        response = crawler.http.request('GET', crawler.url)
         logbody = response.data.decode('cp932', errors='ignore')
         loglist = logbody.split('<HR>\n')
         loglist = loglist[1:-1]
