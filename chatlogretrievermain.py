@@ -1,16 +1,16 @@
 import crawler
 import time
 
-limit = 120
+limit = 100
 
 if __name__ == "__main__":
     i = 0
     mycralwer = crawler.crawler()
     while i < limit:
         print(i)
-        mycralwer.GetPage()
+        result = mycralwer.GetPage()
         time.sleep(30)
-        i += 1
+        i += result
 
         
 

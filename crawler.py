@@ -17,6 +17,7 @@ class crawler:
         crawler.lastlogtime = origintimestamp
 
     def GetPage(self):
+        result = 0
         response = crawler.http.request('GET', crawler.url)
         logbody = response.data.decode('cp932', errors='ignore')
         loglist = logbody.split('<HR>\n')
@@ -49,12 +50,14 @@ class crawler:
                     self.db = client['chatlog']
                     collection = self.db['chatlog']
                     collection.insert_one(dataobj)
+                    result += 1
                 else:
                     pass
             else:
                 pass
         timecollection = self.db['latestTimeStamp']        
         timecollection.find_one_and_update({},{'$set':{'timestamp':crawler.lastlogtime}})
+        return result
     
 
 
