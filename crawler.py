@@ -11,8 +11,8 @@ class crawler:
     http = urllib3.PoolManager()
     def __init__(self):
         client = pymongo.MongoClient(crawler.mongourl)
-        db = client['chatlog']
-        collection = db['latestTimeStamp']
+        self.db = client['chatlog']
+        collection = self.db['latestTimeStamp']
         origintimestamp = collection.find_one()['timestamp']
         crawler.lastlogtime = origintimestamp
 
@@ -46,14 +46,14 @@ class crawler:
                         login = False
                         dataobj['login']=login
                     client = pymongo.MongoClient(crawler.mongourl)
-                    db = client['chatlog']
-                    collection = db['chatlog']
+                    self.db = client['chatlog']
+                    collection = self.db['chatlog']
                     collection.insert_one(dataobj)
                 else:
                     pass
             else:
                 pass
-        timecollection = db['latestTimeStamp']        
+        timecollection = self.db['latestTimeStamp']        
         timecollection.find_one_and_update({},{'$set':{'timestamp':crawler.lastlogtime}})
     
 
