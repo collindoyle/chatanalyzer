@@ -11,7 +11,3 @@ if __name__ == "__main__":
         result = mycralwer.GetPage()
         time.sleep(30)
         i += result
-
-        
-
-    
