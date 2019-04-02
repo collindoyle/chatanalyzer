@@ -2,12 +2,11 @@ import pymongo
 import mysql.connector
 import urllib3
 import datetime
-import re
-import time
 import ipqueryhtmlparser
 import ipinfo
 
-class analyzer :
+
+class analyzer:
     mytoken = '7909e13247806a'
     mysqlhost = '118.27.35.79'
     mysqlusername = 'collindoyle'
@@ -18,13 +17,14 @@ class analyzer :
     logdict = dict()
     http = urllib3.PoolManager()
     parser = ipqueryhtmlparser.ipqueryparser()
+
     def GetIpInfo(self, ip):
         handler = ipinfo.getHandler(analyzer.mytoken)
         details = handler.getDetails(ip)
-        mydb = mysql.connector.connect(host = analyzer.mysqlhost, user=analyzer.mysqlusername, passwd = analyzer.mysqlpw, database = 'chatlog')
+        mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
         mycursor = mydb.cursor()
         sqlquery = "INSERT INTO ipInfo (ipaddress, postcode, Country, Prefecture, City, Provider) VALUES (%s, %s, %s, %s, %s, %s)"
-        if hasattr(details,'postal'):
+        if hasattr(details, 'postal'):
             postal = details.postal
         else:
             postal = '000-0000'
@@ -35,7 +35,7 @@ class analyzer :
         return postal
 
     def GetPostCode(self, ip):
-        mydb = mysql.connector.connect(host = analyzer.mysqlhost, user = analyzer.mysqlusername, passwd = analyzer.mysqlpw, database = 'chatlog')
+        mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
         mycursor = mydb.cursor()
         sqlquery = "SELECT * FROM ipInfo WHERE ipaddress = %s"
         mycursor.execute(sqlquery, (ip,))
@@ -45,7 +45,7 @@ class analyzer :
             postcode = row[1]
         else:
             postcode = self.GetIpInfo(ip)
-        #mycursor.close()
+        # mycursor.close()
         mydb.close()
         return postcode
 
@@ -71,9 +71,9 @@ class analyzer :
                     if record['timestamp'] < r['timestamp']:
                         continue
                     analyzer.logdict.pop(t)
-                    entry = (r['name'],r['ip'],r['timestamp'],record['timestamp'])
+                    entry = (r['name'], r['ip'], r['timestamp'], record['timestamp'])
                     entrylist.append(entry)
-                    col.update_one({'_id': r['_id']}, {'$set' : {'processed': True}})
+                    col.update_one({'_id': r['_id']}, {'$set': {'processed': True}})
                     col.update_one({'_id': record['_id']}, {'$set': {'processed': True}})
                 else:
                     entry = (record['name'], record['ip'], record['timestamp'], record['timestamp'])
@@ -85,8 +85,8 @@ class analyzer :
                 entry = (remainedrecord['name'], remainedrecord['ip'], remainedrecord['timestamp'], remainedrecord['timestamp'] + datetime.timedelta(hours = 1))
                 entrylist.append(entry)
                 col.update_one({'_id': remainedrecord['_id']}, {'$set': {'processed': True}})
-                analyzer.logdict.pop((remainedrecord['name'],remainedrecord['ip']))
-        mydb = mysql.connector.connect(host = analyzer.mysqlhost, user = analyzer.mysqlusername, passwd = analyzer.mysqlpw, database = 'chatlog')
+                analyzer.logdict.pop((remainedrecord['name'], remainedrecord['ip']))
+        mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
         mycursor = mydb.cursor()
         for entry in entrylist:
             ip = entry[1]
