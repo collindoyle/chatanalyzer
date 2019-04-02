@@ -4,6 +4,8 @@ import urllib3
 import datetime
 import ipqueryhtmlparser
 import ipinfo
+import codecs
+import pprint
 
 
 class analyzer:
@@ -96,5 +98,40 @@ class analyzer:
             mycursor.execute(sqlquery, (entry[0], entry[1], entry[2], entry[3], postcode))
             mydb.commit()
         mycursor.close()
+        mydb.close()
+
+    def RecognizeUser(self):
+        mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
+        mycursor = mydb.cursor()
+        sqlquery = 'SELECT username, ipaddress FROM loginrecords'
+        mycursor.execute(sqlquery)
+        lst = mycursor.fetchall()
+        usertable = dict()
+        iptable = dict()
+        entrytable = dict()
+        for x in lst:
+            if x not in entrytable:
+                entrytable[x] = 1
+            else:
+                entrytable[x] += 1
+            if x[0] in usertable:
+                if x[1] not in usertable[x[0]]:
+                    usertable[x[0]].append(x[1])
+            else:
+                usertable[x[0]] = [x[1]]
+            if x[1] in iptable:
+                if x[0] not in iptable[x[1]]:
+                    iptable[x[1]].append(x[0])
+            else:
+                iptable[x[1]] = [x[0]]
+        entryfile = codecs.open('entrycounts.txt','w', encoding='utf8')
+        iptablefile = codecs.open('iptable.txt','w', encoding='utf8')
+        usertablefile = codecs.open('usertable.txt','w', encoding='utf8')
+        pprint.pprint(entrytable, entryfile)
+        pprint.pprint(usertable, usertablefile)
+        pprint.pprint(iptable, iptablefile)
+        entryfile.close()
+        iptablefile.close()
+        usertablefile.close()
         mydb.close()
 

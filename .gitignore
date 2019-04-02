@@ -2,3 +2,8 @@ __pycache__/crawler.cpython-37.pyc
 __pycache__/analyzer.cpython-37.pyc
 __pycache__/ipqueryhtmlparser.cpython-37.pyc
 .vscode/settings.json
+iptable.txt
+usertable.txt
+.vscode/launch.json
+entrycounts.csv
+entrycounts.txt
