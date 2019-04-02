@@ -93,6 +93,7 @@ class analyzer :
         for entry in entrylist:
             ip = entry[1]
             postcode = self.GetPostCode(ip)
+            print(entry[0] + ': ' + entry[1] + ': ' + postcode)
             sqlquery = "INSERT INTO loginrecords (username, ipaddress, logintime, logouttime, postcode) VALUES (%s, %s, %s, %s, %s)"            
             mycursor.execute(sqlquery, (entry[0], entry[1], entry[2], entry[3], postcode))
             mydb.commit()
