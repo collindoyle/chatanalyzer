@@ -49,11 +49,13 @@ class analyzer :
                     analyzer.logdict.pop(t)
                     entry = (r['name'],r['ip'],r['timestamp'],record['timestamp'])
                     entrylist.append(entry)
+            col.update_one({'_id': record['_id']},{'$set', {'processed': True}})
         mydb = mysql.connector.connect(host = analyzer.mysqlhost, user = analyzer.mysqlusername, passwd = analyzer.mysqlpw, database = 'chatlog')
         mycursor = mydb.cursor()
         for entry in entrylist:
             ip = entry[1]
             postcode = self.GetPostCode(ip)
-            #mycursor.execute('SELECT * from ')
-            
+            sqlquery = "INSERT INTO loginrecords (username, ipaddress, logintime, logouttime, postcode) VALUES (%s, %s, '%s', '%s', %s)"            
+            result = mycursor.execute(sqlquery, (entry[0], entry[1], entry[2], entry[3], postcode))
+            mydb.commit()
 
