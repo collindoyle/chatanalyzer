@@ -3,6 +3,7 @@ import mysql.connector
 import urllib3
 import datetime
 import re
+import time
 import ipqueryhtmlparser
 
 class analyzer :
@@ -16,11 +17,13 @@ class analyzer :
     http = urllib3.PoolManager()
     parser = ipqueryhtmlparser.ipqueryparser()
     def GetPostCode(self, ip):
+        time.sleep(1)
         queryurl = analyzer.ipquerytemplate + ip
         response = analyzer.http.request('GET', queryurl)
         resultbody = response.data.decode('utf8', errors = 'ignore')
         analyzer.parser.feed(resultbody)
         postcode = analyzer.parser.datalist[4]
+        print(postcode)
         return postcode
 
     def ProcessLogs(self):
