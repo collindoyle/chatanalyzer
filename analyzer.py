@@ -109,11 +109,13 @@ class analyzer:
         usertable = dict()
         iptable = dict()
         entrytable = dict()
+        idcount = 0
+        idcounter = 0
         for x in lst:
             if x not in entrytable:
-                entrytable[x] = 1
+                entrytable[x] = {'counter': 1}
             else:
-                entrytable[x] += 1
+                entrytable[x]['counter'] += 1
             if x[0] in usertable:
                 if x[1] not in usertable[x[0]]:
                     usertable[x[0]].append(x[1])
@@ -124,12 +126,29 @@ class analyzer:
                     iptable[x[1]].append(x[0])
             else:
                 iptable[x[1]] = [x[0]]
+        idtable = dict()
+        for k in entrytable.keys():
+            if 'id' not in entrytable[k]:
+                idcount = idcounter
+                idcounter += 1
+                entrytable[k]['id'] = idcount
+                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]})}
+                for u in iptable[k[1]]:
+                    for i in usertable[k[0]]:
+                        if (u,i) in entrytable.keys() and 'id' not in entrytable[(u,i)]:
+                            entrytable[(u,i)]['id'] = idcount
+                            if u not in idtable[idcount]['users']:
+                                idtable[idcount]['users'].add(u)
+                            if i not in idtable[idcount]['ips']:
+                                idtable[idcount]['ips'].add(i)
         entryfile = codecs.open('entrycounts.txt','w', encoding='utf8')
         iptablefile = codecs.open('iptable.txt','w', encoding='utf8')
         usertablefile = codecs.open('usertable.txt','w', encoding='utf8')
+        idlistfile = codecs.open('idlist.txt','w',encoding='utf8')
         pprint.pprint(entrytable, entryfile)
         pprint.pprint(usertable, usertablefile)
         pprint.pprint(iptable, iptablefile)
+        pprint.pprint(idtable,idlistfile)
         entryfile.close()
         iptablefile.close()
         usertablefile.close()
