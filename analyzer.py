@@ -53,11 +53,9 @@ class analyzer :
         mongoclient = pymongo.MongoClient(analyzer.mongourl)
         query = {'processed': False}
         db = mongoclient['chatlog']
-        col = db['chatlog']
-        records = list()
+        col = db['chatlog']        
         entrylist = list()
-        for x in col.find(query):
-            records.append(x)
+        records = list(col.find(query).sort('timestamp'))
         for record in records:
             t = (record['name'], record['ip'])
             if record['login']:
