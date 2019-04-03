@@ -55,7 +55,8 @@ class analyzer:
         mongoclient = pymongo.MongoClient(analyzer.mongourl)
         query = {'processed': False}
         db = mongoclient['chatlog']
-        col = db['chatlog']        
+        col = db['chatlog']
+        recordcol = db['records']        
         entrylist = list()
         records = list(col.find(query).sort('timestamp'))
         for record in records:
@@ -94,28 +95,37 @@ class analyzer:
             ip = entry[1]
             postcode = self.GetPostCode(ip)
             print(entry[0] + ': ' + entry[1] + ': ' + postcode)
-            sqlquery = "INSERT INTO loginrecords (username, ipaddress, logintime, logouttime, postcode) VALUES (%s, %s, %s, %s, %s)"            
-            mycursor.execute(sqlquery, (entry[0], entry[1], entry[2], entry[3], postcode))
-            mydb.commit()
+            dataobj = dict({'username': entry[0], 'ipaddress': entry[1], 'logintime': entry[2], 'logouttime': entry[3], 'postcode': postcode, 'processed': False})
+            # sqlquery = "INSERT INTO loginrecords (username, ipaddress, logintime, logouttime, postcode) VALUES (%s, %s, %s, %s, %s)"            
+            # mycursor.execute(sqlquery, (entry[0], entry[1], entry[2], entry[3], postcode))
+            # mydb.commit()
+            recordcol.insert_one(dataobj)
         mycursor.close()
         mydb.close()
 
     def RecognizeUser(self):
-        mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
-        mycursor = mydb.cursor()
-        sqlquery = 'SELECT username, ipaddress FROM loginrecords'
-        mycursor.execute(sqlquery)
-        lst = mycursor.fetchall()
+        # mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
+        # mycursor = mydb.cursor()
+        # sqlquery = 'SELECT username, ipaddress FROM loginrecords'
+        # mycursor.execute(sqlquery)
+        # lst = mycursor.fetchall()
+        mongoclient = pymongo.MongoClient(analyzer.mongourl)
+        db = mongoclient['chatlog']
+        col = db['records']
+        lst = list(col.find({'processed': False}))
         usertable = dict()
         iptable = dict()
         entrytable = dict()
         idcount = 0
         idcounter = 0
-        for x in lst:
+        for record in lst:
+            x = (record['username'], record['ipaddress'])
             if x not in entrytable:
-                entrytable[x] = {'counter': 1}
+                entrytable[x] = {'counter': 1, 'firstappeared': record['logintime']}
             else:
                 entrytable[x]['counter'] += 1
+                if record['logintime'] < entrytable[x]['firstappeared']:
+                    entrytable[x]['firstappeared'] = record['logintime']
             if x[0] in usertable:
                 if x[1] not in usertable[x[0]]:
                     usertable[x[0]].append(x[1])
@@ -132,13 +142,16 @@ class analyzer:
                 idcount = idcounter
                 idcounter += 1
                 entrytable[k]['id'] = idcount
-                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]}), 'counter':0}
+                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]}), 'counter':0, 'updated': True, 'firstappeared': entrytable[k]['firstappeared']}
                 idtable[idcount]['counter'] += entrytable[k]['counter']
                 for u in iptable[k[1]]:
                     for i in usertable[k[0]]:
                         if (u,i) in entrytable.keys() and 'id' not in entrytable[(u,i)]:
                             entrytable[(u,i)]['id'] = idcount
                             idtable[idcount]['counter'] += entrytable[(u,i)]['counter']
+                            idtable[idcount]['updated'] = True
+                            if entrytable[(u,i)]['firstappeared'] < idtable[idcount]['firstappeared']:
+                                idtable[idcount]['firstappeared'] = entrytable[(u,i)]['firstappeared']
                             if u not in idtable[idcount]['users']:
                                 idtable[idcount]['users'].add(u)
                             if i not in idtable[idcount]['ips']:
@@ -154,5 +167,5 @@ class analyzer:
         entryfile.close()
         iptablefile.close()
         usertablefile.close()
-        mydb.close()
+        # mydb.close()
 
