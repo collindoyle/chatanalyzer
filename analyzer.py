@@ -121,11 +121,13 @@ class analyzer:
         for record in lst:
             x = (record['username'], record['ipaddress'])
             if x not in entrytable:
-                entrytable[x] = {'counter': 1, 'firstappeared': record['logintime']}
+                entrytable[x] = {'counter': 1, 'firstappeared': record['logintime'], 'lastlogout': record['logouttime']}
             else:
                 entrytable[x]['counter'] += 1
                 if record['logintime'] < entrytable[x]['firstappeared']:
                     entrytable[x]['firstappeared'] = record['logintime']
+                if record['logouttime'] > entrytable[x]['lastlogout']:
+                    entrytable[x]['lastlogout'] = record['logouttime']
             if x[0] in usertable:
                 if x[1] not in usertable[x[0]]:
                     usertable[x[0]].append(x[1])
@@ -142,7 +144,7 @@ class analyzer:
                 idcount = idcounter
                 idcounter += 1
                 entrytable[k]['id'] = idcount
-                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]}), 'counter':0, 'updated': True, 'firstappeared': entrytable[k]['firstappeared']}
+                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]}), 'counter':0, 'updated': True, 'firstappeared': entrytable[k]['firstappeared'], 'lastlogout': entrytable[k]['lastlogout']}
                 idtable[idcount]['counter'] += entrytable[k]['counter']
                 for u in iptable[k[1]]:
                     for i in usertable[k[0]]:
@@ -152,6 +154,8 @@ class analyzer:
                             idtable[idcount]['updated'] = True
                             if entrytable[(u,i)]['firstappeared'] < idtable[idcount]['firstappeared']:
                                 idtable[idcount]['firstappeared'] = entrytable[(u,i)]['firstappeared']
+                            if entrytable[(u,i)]['lastlogout'] > idtable[idcount]['lastlogout']:
+                                idtable[idcount]['lastlogout'] = entrytable[(u,i)]['lastlogout']
                             if u not in idtable[idcount]['users']:
                                 idtable[idcount]['users'].add(u)
                             if i not in idtable[idcount]['ips']:
