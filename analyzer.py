@@ -132,11 +132,13 @@ class analyzer:
                 idcount = idcounter
                 idcounter += 1
                 entrytable[k]['id'] = idcount
-                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]})}
+                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]}), 'counter':0}
+                idtable[idcount]['counter'] += entrytable[k]['counter']
                 for u in iptable[k[1]]:
                     for i in usertable[k[0]]:
                         if (u,i) in entrytable.keys() and 'id' not in entrytable[(u,i)]:
                             entrytable[(u,i)]['id'] = idcount
+                            idtable[idcount]['counter'] += entrytable[(u,i)]['counter']
                             if u not in idtable[idcount]['users']:
                                 idtable[idcount]['users'].add(u)
                             if i not in idtable[idcount]['ips']:
