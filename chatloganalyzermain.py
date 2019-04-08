@@ -16,6 +16,7 @@ def main(argv):
         elif opt == '--rel':
             print('Processing user data')
             myanalyzer.RecognizeUser()
+    myanalyzer.RecognizeUser()
 
 if __name__ == "__main__":
     print(sys.argv)    

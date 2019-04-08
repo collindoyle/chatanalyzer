@@ -19,7 +19,10 @@ class analyzer:
     logdict = dict()
     http = urllib3.PoolManager()
     parser = ipqueryhtmlparser.ipqueryparser()
-
+    userInfoMap = dict()
+    userNameMap = dict()
+    IpUserMap = dict()
+    idcount = 0
     def GetIpInfo(self, ip):
         handler = ipinfo.getHandler(analyzer.mytoken)
         details = handler.getDetails(ip)
@@ -89,87 +92,100 @@ class analyzer:
                 entrylist.append(entry)
                 col.update_one({'_id': remainedrecord['_id']}, {'$set': {'processed': True}})
                 analyzer.logdict.pop((remainedrecord['name'], remainedrecord['ip']))
-        mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
-        mycursor = mydb.cursor()
         for entry in entrylist:
             ip = entry[1]
             postcode = self.GetPostCode(ip)
             print(entry[0] + ': ' + entry[1] + ': ' + postcode)
             dataobj = dict({'username': entry[0], 'ipaddress': entry[1], 'logintime': entry[2], 'logouttime': entry[3], 'postcode': postcode, 'processed': False})
-            # sqlquery = "INSERT INTO loginrecords (username, ipaddress, logintime, logouttime, postcode) VALUES (%s, %s, %s, %s, %s)"            
-            # mycursor.execute(sqlquery, (entry[0], entry[1], entry[2], entry[3], postcode))
-            # mydb.commit()
             recordcol.insert_one(dataobj)
-        mycursor.close()
-        mydb.close()
-
+        
     def RecognizeUser(self):
-        # mydb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
-        # mycursor = mydb.cursor()
-        # sqlquery = 'SELECT username, ipaddress FROM loginrecords'
-        # mycursor.execute(sqlquery)
-        # lst = mycursor.fetchall()
+        if len(analyzer.userInfoMap) == 0:
+            self.LoadUserInfo()
         mongoclient = pymongo.MongoClient(analyzer.mongourl)
         db = mongoclient['chatlog']
         col = db['records']
         lst = list(col.find({'processed': False}))
-        usertable = dict()
-        iptable = dict()
-        entrytable = dict()
-        idcount = 0
-        idcounter = 0
+        createcount = 0       
         for record in lst:
-            x = (record['username'], record['ipaddress'])
-            if x not in entrytable:
-                entrytable[x] = {'counter': 1, 'firstappeared': record['logintime'], 'lastlogout': record['logouttime']}
+            entryuserid=0            
+            isNewUser = False
+            if record['username'] not in analyzer.userNameMap.keys() and record['ipaddress'] not in analyzer.IpUserMap.keys(): 
+                # new user and new IP detected                
+                entryuserid = analyzer.idcount
+                analyzer.idcount += 1
+                analyzer.userInfoMap[entryuserid] = {'users': {record['username']}, 'ips': {record['ipaddress']}, 'count': 1, 'firstappeared': record['logintime'], 'lastlogout': record['logouttime'], 'created': True, 'updated': False}
+                analyzer.userNameMap[record['username']] = {'userId': entryuserid, 'ips': {record['ipaddress']}}
+                analyzer.IpUserMap[record['ipaddress']] = {'userId': entryuserid, 'users': {record['username']}}
+                isNewUser = True     
+                createcount += 1           
+            elif record['username'] not in analyzer.userNameMap.keys():
+                # new user and used IP
+                entryuserid = analyzer.IpUserMap[record['ipaddress']]['userId']
+                analyzer.userNameMap[record['username']] = {'userId': entryuserid, 'ips': {record['ipaddress']}}
+                analyzer.IpUserMap[record['ipaddress']]['users'].add(record['username'])
+                analyzer.userInfoMap[entryuserid]['users'].add(record['username'])
+            elif record['ipaddress'] not in analyzer.IpUserMap.keys():
+                # used user and new IP
+                entryuserid = analyzer.userNameMap[record['username']]['userId']
+                analyzer.IpUserMap[record['ipaddress']] = {'userId': entryuserid, 'users': {record['username']}}
+                analyzer.userNameMap[record['username']]['ips'].add(record['ipaddress'])
+                analyzer.userInfoMap[entryuserid]['ips'].add(record['ipaddress'])
             else:
-                entrytable[x]['counter'] += 1
-                if record['logintime'] < entrytable[x]['firstappeared']:
-                    entrytable[x]['firstappeared'] = record['logintime']
-                if record['logouttime'] > entrytable[x]['lastlogout']:
-                    entrytable[x]['lastlogout'] = record['logouttime']
-            if x[0] in usertable:
-                if x[1] not in usertable[x[0]]:
-                    usertable[x[0]].append(x[1])
-            else:
-                usertable[x[0]] = [x[1]]
-            if x[1] in iptable:
-                if x[0] not in iptable[x[1]]:
-                    iptable[x[1]].append(x[0])
-            else:
-                iptable[x[1]] = [x[0]]
-        idtable = dict()
-        for k in entrytable.keys():
-            if 'id' not in entrytable[k]:
-                idcount = idcounter
-                idcounter += 1
-                entrytable[k]['id'] = idcount
-                idtable[idcount]={'users':set({k[0]}), 'ips':set({k[1]}), 'counter':0, 'updated': True, 'firstappeared': entrytable[k]['firstappeared'], 'lastlogout': entrytable[k]['lastlogout']}
-                idtable[idcount]['counter'] += entrytable[k]['counter']
-                for u in iptable[k[1]]:
-                    for i in usertable[k[0]]:
-                        if (u,i) in entrytable.keys() and 'id' not in entrytable[(u,i)]:
-                            entrytable[(u,i)]['id'] = idcount
-                            idtable[idcount]['counter'] += entrytable[(u,i)]['counter']
-                            idtable[idcount]['updated'] = True
-                            if entrytable[(u,i)]['firstappeared'] < idtable[idcount]['firstappeared']:
-                                idtable[idcount]['firstappeared'] = entrytable[(u,i)]['firstappeared']
-                            if entrytable[(u,i)]['lastlogout'] > idtable[idcount]['lastlogout']:
-                                idtable[idcount]['lastlogout'] = entrytable[(u,i)]['lastlogout']
-                            if u not in idtable[idcount]['users']:
-                                idtable[idcount]['users'].add(u)
-                            if i not in idtable[idcount]['ips']:
-                                idtable[idcount]['ips'].add(i)
-        entryfile = codecs.open('entrycounts.txt','w', encoding='utf8')
-        iptablefile = codecs.open('iptable.txt','w', encoding='utf8')
-        usertablefile = codecs.open('usertable.txt','w', encoding='utf8')
-        idlistfile = codecs.open('idlist.txt','w',encoding='utf8')
-        pprint.pprint(entrytable, entryfile)
-        pprint.pprint(usertable, usertablefile)
-        pprint.pprint(iptable, iptablefile)
-        pprint.pprint(idtable,idlistfile)
-        entryfile.close()
-        iptablefile.close()
-        usertablefile.close()
-        # mydb.close()
+                # both used user and IP
+                entryuserid = analyzer.userNameMap[record['username']]['userId']
+            if not isNewUser:
+                analyzer.userInfoMap[entryuserid]['count'] += 1
+                analyzer.userInfoMap[entryuserid]['updated'] = True
+                if record['logintime'] < analyzer.userInfoMap[entryuserid]['firstappeared']:
+                    analyzer.userInfoMap[entryuserid]['firstappeared'] = record['logintime']
+                if record['logouttime'] > analyzer.userInfoMap[entryuserid]['lastlogout']:
+                    analyzer.userInfoMap[entryuserid]['lastlogout'] = record['logouttime']
+            col.update_one({'_id': record['_id']}, {'$set': {'processed': True}})
+        print('Found %s new users' % (createcount,))
+        self.SaveUserInfo()
+
+    def LoadUserInfo(self):
+        mysqldb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
+        mycursor = mysqldb.cursor()
+        sqlquery = "SELECT id, usernames, ipaddresses, count, firstappeared, lastlogout FROM userInfo"
+        mycursor.execute(sqlquery)
+        lst = mycursor.fetchall()
+        analyzer.idcount = len(lst)
+        for record in lst:
+            usrlist = record[1].strip("{}").split(", ")
+            userset = set({})
+            for x in usrlist:
+                s = x.strip("'")
+                userset.add(s)
+            iplist = record[2].strip("{}").split(", ")
+            ipset = set({})
+            for x in iplist:
+                s = x.strip("'")
+                ipset.add(s)            
+            analyzer.userInfoMap[record[0]]={'users': userset, 'ips': ipset, 'count': record[3], 'firstappeared': record[4], 'lastlogout': record[5], 'created': False, 'updated': False}
+            for u in userset:
+                analyzer.userNameMap[u] = {'userId': record[0], 'ips': ipset}
+            for i in ipset:
+                analyzer.IpUserMap[i] = {'userId': record[0], 'users': userset}
+        mycursor.close()
+        mysqldb.close()
+    
+    def SaveUserInfo(self):
+        mysqldb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
+        mycursor = mysqldb.cursor()
+        sqlinsert = "INSERT INTO userInfo (id, usernames, ipaddresses, count, firstappeared, lastlogout) VALUES (%s, %s, %s, %s, %s, %s)"
+        sqlupdate = "UPDATE userInfo SET usernames=%s, ipaddresses=%s, count=%s, firstappeared=%s, lastlogout=%s WHERE id=%s"
+        for i,r in analyzer.userInfoMap.items():
+            if r['created']:
+                r['created'] = False
+                r['updated'] = False
+                mycursor.execute(sqlinsert, (i, str(r['users']), str(r['ips']), r['count'], r['firstappeared'], r['lastlogout']))
+                mysqldb.commit()
+            elif r['updated']:
+                r['updated'] = False
+                mycursor.execute(sqlupdate, (str(r['users']), str(r['ips']), r['count'], r['firstappeared'], r['lastlogout'], i))
+                mysqldb.commit()
+        mycursor.close()
+        mysqldb.close()
 

@@ -15,8 +15,7 @@ if __name__ == "__main__":
         print(i)
         if result == 0:
             sleeptime += 10
-        else:
-            myanalyzer = analyzer.analyzer()
+        else:            
             myanalyzer.ProcessLogs()
             myanalyzer.RecognizeUser()
             sleeptime = 60
