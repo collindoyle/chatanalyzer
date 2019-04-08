@@ -145,6 +145,14 @@ class analyzer:
         print('Found %s new users' % (createcount,))
         self.SaveUserInfo()
 
+    def ParseSet(self, settext):
+        memlist = settext.strip("{}").split(", ")
+        memset = set({})
+        for x in memlist:
+            s = x.strip("'")
+            memset.add(s)
+        return memset
+
     def LoadUserInfo(self):
         mysqldb = mysql.connector.connect(host=analyzer.mysqlhost, user=analyzer.mysqlusername, passwd=analyzer.mysqlpw, database='chatlog')
         mycursor = mysqldb.cursor()
@@ -153,16 +161,8 @@ class analyzer:
         lst = mycursor.fetchall()
         analyzer.idcount = len(lst)
         for record in lst:
-            usrlist = record[1].strip("{}").split(", ")
-            userset = set({})
-            for x in usrlist:
-                s = x.strip("'")
-                userset.add(s)
-            iplist = record[2].strip("{}").split(", ")
-            ipset = set({})
-            for x in iplist:
-                s = x.strip("'")
-                ipset.add(s)            
+            userset = self.ParseSet(record[1])
+            ipset = self.ParseSet(record[2])
             analyzer.userInfoMap[record[0]]={'users': userset, 'ips': ipset, 'count': record[3], 'firstappeared': record[4], 'lastlogout': record[5], 'created': False, 'updated': False}
             for u in userset:
                 analyzer.userNameMap[u] = {'userId': record[0], 'ips': ipset}
