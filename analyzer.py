@@ -150,6 +150,7 @@ class analyzer:
         memset = set({})
         for x in memlist:
             s = x.strip("'")
+            s = s.replace(u'\u3000',"")
             memset.add(s)
         return memset
 
@@ -180,11 +181,11 @@ class analyzer:
             if r['created']:
                 r['created'] = False
                 r['updated'] = False
-                mycursor.execute(sqlinsert, (i, str(r['users']), str(r['ips']), r['count'], r['firstappeared'], r['lastlogout']))
+                mycursor.execute(sqlinsert, (i, str(r['users']).encode(encoding='utf-8'), str(r['ips']), r['count'], r['firstappeared'], r['lastlogout']))
                 mysqldb.commit()
             elif r['updated']:
                 r['updated'] = False
-                mycursor.execute(sqlupdate, (str(r['users']), str(r['ips']), r['count'], r['firstappeared'], r['lastlogout'], i))
+                mycursor.execute(sqlupdate, (str(r['users']).encode(encoding='utf-8'), str(r['ips']), r['count'], r['firstappeared'], r['lastlogout'], i))
                 mysqldb.commit()
         mycursor.close()
         mysqldb.close()
