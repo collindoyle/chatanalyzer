@@ -16,6 +16,8 @@ class visualizer:
         memset = set({})
         for x in memlist:
             s = x.strip("'")
+            s = s.replace('\\u3000',"")
+            s = s.replace('\\', "")
             memset.add(s)
         return memset
 
@@ -25,6 +27,7 @@ class visualizer:
             mycursor = mysqldb.consor()
             mycursor.execute(visualizer.querysql, (id,))
             records = mycursor.fetchall()
+            accessrecords = list()
             if len(records) > 0:
                 record = records[0]
                 nameset = self.ParseSet(record[1])
