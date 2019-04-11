@@ -150,7 +150,8 @@ class analyzer:
         memset = set({})
         for x in memlist:
             s = x.strip("'")
-            s = s.replace(u'\u3000',"")
+            s = s.replace('\\u3000',"")
+            s = s.replace('\\', "")
             memset.add(s)
         return memset
 

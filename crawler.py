@@ -36,7 +36,7 @@ class crawler:
                     crawler.lastlogtime = timestamp
                     mName = re.search(R':\s(.+)\sさん\u3000', line)
                     name = mName.groups()[0]
-                    dataobj['name'] = name.replace(u'\u3000',"")
+                    dataobj['name'] = name.replace('\\u3000',"")
                     dataobj['ip'] = ip
                     dataobj['timestamp'] = timestamp
                     dataobj['processed'] = False                    
