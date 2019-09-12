@@ -1,3 +1,4 @@
+# coding: UTF-8 
 import datetime
 import re
 import urllib3
@@ -13,7 +14,7 @@ class crawler:
     def __init__(self):
         client = pymongo.MongoClient(crawler.mongourl)
         self.db = client['chatlog']
-        collection = self.db['latestTimeStamp']
+        collection = self.db['lastTimeStamp']
         origintimestamp = collection.find_one()['timestamp']
         crawler.lastlogtime = origintimestamp
 

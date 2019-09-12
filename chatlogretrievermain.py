@@ -9,7 +9,7 @@ if __name__ == "__main__":
     mycralwer = crawler.crawler()
     myanalyzer = analyzer.analyzer()
     sleeptime = 60
-    while i < limit:        
+    while True:        
         result = mycralwer.GetPage()
         i += result
         print(i)
