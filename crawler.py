@@ -57,6 +57,6 @@ class crawler:
                     pass
             else:
                 pass
-        timecollection = self.db['latestTimeStamp']        
+        timecollection = self.db['lastTimeStamp']        
         timecollection.find_one_and_update({}, {'$set': {'timestamp': crawler.lastlogtime}})
         return result
