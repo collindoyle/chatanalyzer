@@ -10,3 +10,11 @@ entrycounts.txt
 idlist.txt
 idlist - コピー.txt
 .DS_Store
+.idea/inspectionProfiles/profiles_settings.xml
+analyzer.pyc
+crawler.pyc
+.idea/.gitignore
+.idea/chatanalyzer.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
