@@ -13,7 +13,7 @@ class crawler:
     def __init__(self):
         client = pymongo.MongoClient(crawler.mongourl)
         self.db = client['chatlog']
-        collection = self.db['latestTimeStamp']
+        collection = self.db['lastTimeStamp']
         origintimestamp = collection.find_one()['timestamp']
         crawler.lastlogtime = origintimestamp
 
@@ -56,6 +56,6 @@ class crawler:
                     pass
             else:
                 pass
-        timecollection = self.db['latestTimeStamp']        
+        timecollection = self.db['lastTimeStamp']        
         timecollection.find_one_and_update({}, {'$set': {'timestamp': crawler.lastlogtime}})
         return result
